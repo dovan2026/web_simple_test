@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>주문 결제 — ShopX</title>
+  <meta name="description" content="ShopX 배송 정보 입력 및 주문 완료 페이지" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #080C14;
+      --surface: #111827;
+      --card:    #1A2235;
+      --border:  rgba(255,255,255,.07);
+      --text:    #F1F5F9;
+      --muted:   #94A3B8;
+      --accent:  #7C3AED;
+      --accent2: #2563EB;
+      --gold:    #F59E0B;
+      --success: #10B981;
+      --danger:  #EF4444;
+      --radius:  16px;
+      --radius-sm: 8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 99px; }
+
+    /* ── 헤더 ──────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(20px);
+      background: rgba(8,12,20,.82);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .header-inner {
+      max-width: 1280px; margin: 0 auto;
+      display: flex; align-items: center; gap: 20px; height: 68px;
+    }
+    .logo {
+      font-size: 1.6rem; font-weight: 900;
+      background: linear-gradient(135deg, #7C3AED, #2563EB);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none; font-size: .88rem;
+      padding: 6px 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); transition: all .2s;
+    }
+    .back-btn:hover { color: var(--text); border-color: rgba(124,58,237,.4); }
+
+    /* ── 진행 단계 ──────────────────── */
+    .steps {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0; margin: 28px 24px;
+    }
+    .step {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; font-size: .82rem; font-weight: 600;
+    }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; flex-shrink: 0;
+    }
+    .step.active .step-num { background: linear-gradient(135deg, #7C3AED, #2563EB); color: #fff; }
+    .step.done .step-num { background: var(--success); color: #fff; }
+    .step:not(.active):not(.done) .step-num { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .step.active { color: var(--text); }
+    .step:not(.active) { color: var(--muted); }
+    .step-line { flex: 1; height: 1px; background: var(--border); max-width: 60px; }
+
+    /* ── 메인 레이아웃 ─────────────── */
+    .checkout-layout {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 24px 80px;
+      display: grid; grid-template-columns: 1fr 380px; gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .checkout-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── 섹션 카드 ──────────────────── */
+    .section-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px; margin-bottom: 20px;
+    }
+    .section-card h2 {
+      font-size: 1rem; font-weight: 700; margin-bottom: 20px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ── 폼 ─────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid.full { grid-template-columns: 1fr; }
+
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field.span2 { grid-column: span 2; }
+
+    .form-label {
+      font-size: .78rem; font-weight: 600; color: var(--muted);
+      letter-spacing: .3px;
+    }
+    .form-label .req { color: var(--accent); margin-left: 2px; }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 11px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text);
+      font-family: inherit; font-size: .88rem; outline: none;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,58,237,.15);
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--muted); }
+    .form-input.error { border-color: var(--danger); }
+
+    .form-textarea { resize: vertical; min-height: 80px; }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394A3B8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      cursor: pointer;
+    }
+
+    /* ── 결제 방법 ─────────────────── */
+    .pay-methods {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .pay-method {
+      padding: 14px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border); cursor: pointer;
+      text-align: center; transition: all .2s;
+      background: var(--surface);
+    }
+    .pay-method:hover { border-color: rgba(124,58,237,.4); }
+    .pay-method.active {
+      border-color: var(--accent);
+      background: rgba(124,58,237,.1);
+    }
+    .pay-method .icon { font-size: 1.5rem; margin-bottom: 4px; }
+    .pay-method .label { font-size: .75rem; font-weight: 600; color: var(--muted); }
+    .pay-method.active .label { color: #A78BFA; }
+
+    /* ── 카드 정보 입력 ─────────────── */
+    #card-fields { display: none; margin-top: 16px; }
+    #card-fields.visible { display: block; animation: fadeIn .3s ease; }
+
+    /* ── 주문 요약 사이드바 ────────── */
+    .order-summary {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      position: sticky; top: 88px;
+    }
+    .summary-title {
+      font-size: 1rem; font-weight: 700; margin-bottom: 16px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+
+    .order-item {
+      display: flex; gap: 10px; align-items: center; margin-bottom: 12px;
+    }
+    .order-item-img {
+      width: 48px; height: 48px; border-radius: 8px;
+      overflow: hidden; background: var(--surface); flex-shrink: 0;
+    }
+    .order-item-img img { width: 100%; height: 100%; object-fit: cover; }
+    .order-item-info { flex: 1; min-width: 0; }
+    .order-item-name { font-size: .8rem; font-weight: 600; line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .order-item-qty { font-size: .72rem; color: var(--muted); }
+    .order-item-price { font-size: .85rem; font-weight: 700; flex-shrink: 0; }
+
+    .summary-divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    .summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: .85rem; padding: 5px 0; color: var(--muted);
+    }
+    .summary-row.total {
+      font-size: 1.05rem; font-weight: 800; color: var(--text);
+      padding-top: 12px; margin-top: 4px;
+      border-top: 1px solid var(--border);
+    }
+    .free-tag { color: var(--success); font-weight: 600; }
+
+    .submit-btn {
+      width: 100%; padding: 16px; margin-top: 20px;
+      background: linear-gradient(135deg, #7C3AED, #2563EB);
+      border: none; border-radius: var(--radius-sm);
+      color: #fff; font-family: inherit; font-size: 1rem; font-weight: 700;
+      cursor: pointer; box-shadow: 0 6px 24px rgba(124,58,237,.4);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(124,58,237,.6); }
+
+    /* ════════════════════════════════════
+       주문 완료 화면
+    ════════════════════════════════════ */
+    #success-screen {
+      display: none;
+      max-width: 680px; margin: 0 auto; padding: 60px 24px 100px;
+      text-align: center;
+      animation: fadeInUp .6s ease;
+    }
+
+    /* 체크 애니메이션 */
+    .check-wrap {
+      width: 100px; height: 100px; margin: 0 auto 28px;
+      position: relative;
+    }
+    .check-circle {
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      border: 4px solid rgba(16,185,129,.3);
+      background: rgba(16,185,129,.08);
+      display: flex; align-items: center; justify-content: center;
+      animation: circleScale .5s ease forwards;
+    }
+    .check-icon {
+      font-size: 3rem; line-height: 1;
+      animation: checkPop .4s ease .3s both;
+    }
+
+    .success-badge {
+      display: inline-block;
+      background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3);
+      color: var(--success); border-radius: 50px;
+      padding: 6px 16px; font-size: .78rem; font-weight: 600;
+      margin-bottom: 16px;
+    }
+    #success-screen h1 {
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 900; letter-spacing: -.3px; margin-bottom: 12px;
+    }
+    #success-screen > p {
+      color: var(--muted); font-size: .95rem; margin-bottom: 32px;
+    }
+
+    /* 영수증 박스 */
+    .receipt-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      text-align: left; margin-bottom: 32px;
+    }
+    .receipt-box h2 {
+      font-size: .95rem; font-weight: 700; margin-bottom: 16px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .receipt-row {
+      display: flex; justify-content: space-between;
+      font-size: .85rem; padding: 7px 0; color: var(--muted);
+    }
+    .receipt-row span:last-child { color: var(--text); font-weight: 600; }
+    .receipt-row.total {
+      font-size: 1rem; font-weight: 800; color: var(--text);
+      border-top: 1px solid var(--border); padding-top: 14px; margin-top: 6px;
+    }
+    .receipt-row.total span:last-child { color: #A78BFA; }
+
+    .success-actions {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    }
+    .btn-home {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 50px;
+      background: linear-gradient(135deg, #7C3AED, #2563EB);
+      color: #fff; text-decoration: none; font-weight: 700; font-size: .95rem;
+      box-shadow: 0 6px 24px rgba(124,58,237,.4); transition: transform .2s;
+    }
+    .btn-home:hover { transform: translateY(-2px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 50px;
+      border: 1.5px solid var(--border); color: var(--muted);
+      text-decoration: none; font-weight: 600; font-size: .95rem;
+      background: transparent; transition: all .2s;
+    }
+    .btn-secondary:hover { border-color: rgba(124,58,237,.4); color: var(--text); }
+
+    /* 콘페티 캔버스 */
+    #confetti-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 500;
+    }
+
+    /* ── 토스트 ─────────────────────── */
+    .shopx-toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); padding: 12px 24px;
+      border-radius: 50px; font-size: .88rem; font-weight: 500;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+      z-index: 9999; white-space: nowrap;
+    }
+    .shopx-toast.show { transform: translateX(-50%) translateY(0); }
+    .shopx-toast.success { border-color: rgba(16,185,129,.4); }
+    .toast-icon { color: var(--success); }
+
+    /* ── 키프레임 ────────────────────── */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes circleScale {
+      0%   { transform: scale(0); opacity: 0; }
+      70%  { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes checkPop {
+      0%   { transform: scale(0) rotate(-30deg); opacity: 0; }
+      70%  { transform: scale(1.2) rotate(5deg); }
+      100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<header>
+  <div class="header-inner">
+    <a href="x1.html" class="logo">ShopX</a>
+    <a href="x3.html" class="back-btn" id="back-to-cart">← 장바구니</a>
+  </div>
+</header>
+
+<!-- ═══════ 결제 폼 화면 ═══════ -->
+<div id="checkout-screen">
+
+  <!-- 진행 단계 -->
+  <div class="steps">
+    <div class="step done">
+      <div class="step-num">✓</div> 장바구니
+    </div>
+    <div class="step-line"></div>
+    <div class="step active">
+      <div class="step-num">2</div> 주문 / 결제
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-num">3</div> 완료
+    </div>
+  </div>
+
+  <div class="checkout-layout">
+
+    <!-- 좌측: 폼 영역 -->
+    <div>
+      <!-- 배송 정보 -->
+      <div class="section-card">
+        <h2>📦 배송 정보</h2>
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="form-label" for="ship-name">이름 <span class="req">*</span></label>
+            <input type="text" id="ship-name" class="form-input" placeholder="홍길동" autocomplete="name" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="ship-phone">연락처 <span class="req">*</span></label>
+            <input type="tel" id="ship-phone" class="form-input" placeholder="010-1234-5678" autocomplete="tel" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="ship-email">이메일</label>
+            <input type="email" id="ship-email" class="form-input" placeholder="example@email.com" autocomplete="email" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="ship-zip">우편번호 <span class="req">*</span></label>
+            <input type="text" id="ship-zip" class="form-input" placeholder="12345" maxlength="5" />
+          </div>
+          <div class="form-field span2">
+            <label class="form-label" for="ship-addr">주소 <span class="req">*</span></label>
+            <input type="text" id="ship-addr" class="form-input" placeholder="서울특별시 강남구 테헤란로 123" autocomplete="street-address" />
+          </div>
+          <div class="form-field span2">
+            <label class="form-label" for="ship-addr2">상세 주소</label>
+            <input type="text" id="ship-addr2" class="form-input" placeholder="아파트 동/호수, 층 등" />
+          </div>
+          <div class="form-field span2">
+            <label class="form-label" for="ship-msg">배송 메시지</label>
+            <select class="form-select" id="ship-msg">
+              <option value="">배송 메시지를 선택하세요</option>
+              <option>문 앞에 놓아주세요</option>
+              <option>부재 시 경비실에 맡겨주세요</option>
+              <option>벨 누르지 말아주세요</option>
+              <option>배송 전 연락 부탁드립니다</option>
+              <option value="custom">직접 입력</option>
+            </select>
+            <textarea class="form-textarea" id="custom-msg" placeholder="직접 메시지를 입력하세요…" style="display:none;margin-top:8px"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 결제 방법 -->
+      <div class="section-card">
+        <h2>💳 결제 방법</h2>
+        <div class="pay-methods">
+          <div class="pay-method active" data-method="card" id="pay-card" onclick="selectPay('card')">
+            <div class="icon">💳</div>
+            <div class="label">신용/체크카드</div>
+          </div>
+          <div class="pay-method" data-method="kakao" id="pay-kakao" onclick="selectPay('kakao')">
+            <div class="icon">🟡</div>
+            <div class="label">카카오페이</div>
+          </div>
+          <div class="pay-method" data-method="naver" id="pay-naver" onclick="selectPay('naver')">
+            <div class="icon">🟢</div>
+            <div class="label">네이버페이</div>
+          </div>
+          <div class="pay-method" data-method="toss" id="pay-toss" onclick="selectPay('toss')">
+            <div class="icon">🔵</div>
+            <div class="label">토스페이</div>
+          </div>
+          <div class="pay-method" data-method="transfer" id="pay-transfer" onclick="selectPay('transfer')">
+            <div class="icon">🏦</div>
+            <div class="label">계좌이체</div>
+          </div>
+          <div class="pay-method" data-method="phone" id="pay-phone" onclick="selectPay('phone')">
+            <div class="icon">📱</div>
+            <div class="label">휴대폰결제</div>
+          </div>
+        </div>
+
+        <div id="card-fields" class="form-grid">
+          <div class="form-field span2">
+            <label class="form-label" for="card-num">카드 번호</label>
+            <input type="text" id="card-num" class="form-input" placeholder="0000 0000 0000 0000" maxlength="19" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="card-exp">유효기간</label>
+            <input type="text" id="card-exp" class="form-input" placeholder="MM/YY" maxlength="5" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="card-cvc">CVC</label>
+            <input type="text" id="card-cvc" class="form-input" placeholder="000" maxlength="3" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 약관 동의 -->
+      <div class="section-card">
+        <h2>✅ 약관 동의</h2>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.88rem">
+            <input type="checkbox" id="agree-all" onchange="toggleAll(this)" style="accent-color:var(--accent);width:16px;height:16px" />
+            <strong>전체 동의</strong>
+          </label>
+          <hr style="border:none;border-top:1px solid var(--border)">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.83rem;color:var(--muted)">
+            <input type="checkbox" class="agree-item" style="accent-color:var(--accent);width:16px;height:16px" />
+            [필수] 이용약관 동의
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.83rem;color:var(--muted)">
+            <input type="checkbox" class="agree-item" style="accent-color:var(--accent);width:16px;height:16px" />
+            [필수] 개인정보 수집·이용 동의
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.83rem;color:var(--muted)">
+            <input type="checkbox" class="agree-item" style="accent-color:var(--accent);width:16px;height:16px" />
+            [선택] 마케팅 수신 동의
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우측: 주문 요약 -->
+    <div class="order-summary" id="order-summary">
+      <div class="summary-title">🧾 주문 상품</div>
+      <div id="order-items-list"></div>
+      <div class="summary-divider"></div>
+      <div class="summary-row">
+        <span>상품 금액</span>
+        <span id="sum-product">-</span>
+      </div>
+      <div class="summary-row">
+        <span>배송비</span>
+        <span id="sum-ship">-</span>
+      </div>
+      <div class="summary-row total">
+        <span>총 결제 금액</span>
+        <span id="sum-total" style="color:#A78BFA">-</span>
+      </div>
+      <button class="submit-btn" id="submit-btn" onclick="submitOrder()">
+        주문 완료하기
+      </button>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:12px;line-height:1.6">
+        결제 정보는 SSL로 암호화됩니다.<br/>위 버튼 클릭 시 약관에 동의합니다.
+      </div>
+    </div>
+
+  </div>
+</div><!-- /checkout-screen -->
+
+
+<!-- ═══════ 주문 완료 화면 ═══════ -->
+<div id="success-screen">
+  <div class="check-wrap">
+    <div class="check-circle">
+      <div class="check-icon">✓</div>
+    </div>
+  </div>
+
+  <div class="success-badge">주문 완료</div>
+  <h1>감사합니다! 🎉</h1>
+  <p>주문이 성공적으로 접수되었습니다.<br/>빠른 배송으로 찾아뵙겠습니다!</p>
+
+  <div class="receipt-box" id="receipt-box">
+    <h2>📋 주문 영수증</h2>
+    <div id="receipt-rows"></div>
+  </div>
+
+  <div class="success-actions">
+    <a href="x1.html" class="btn-home" id="go-home-btn">🏠 홈으로 이동</a>
+    <a href="x1.html" class="btn-secondary">🛍️ 쇼핑 계속하기</a>
+  </div>
+</div>
+
+
+<script src="products.js"></script>
+<script>
+  const SHIPPING_FEE = 3000;
+  const FREE_THRESHOLD = 50000;
+  let selectedPayMethod = 'card';
+
+  // ── 주문 요약 렌더 ──────────────────────────────────────────
+  function renderSummary() {
+    const items = Cart.getAll();
+    const total = Cart.totalPrice();
+    const ship  = total >= FREE_THRESHOLD ? 0 : SHIPPING_FEE;
+
+    document.getElementById('order-items-list').innerHTML =
+      items.map(item => `
+        <div class="order-item">
+          <div class="order-item-img">
+            <img src="${item.image}" alt="${item.name}" loading="lazy" />
+          </div>
+          <div class="order-item-info">
+            <div class="order-item-name">${item.name}</div>
+            <div class="order-item-qty">
+              ${item.color ? item.color : ''} ${item.size ? `/ ${item.size}` : ''} · ${item.qty}개
+            </div>
+          </div>
+          <div class="order-item-price">${formatPrice(item.price * item.qty)}</div>
+        </div>
+      `).join('') || '<p style="color:var(--muted);font-size:.85rem">담긴 상품 없음</p>';
+
+    document.getElementById('sum-product').textContent = formatPrice(total);
+    document.getElementById('sum-ship').innerHTML =
+      ship === 0
+        ? '<span class="free-tag">무료</span>'
+        : formatPrice(ship);
+    document.getElementById('sum-total').textContent = formatPrice(total + ship);
+
+    document.getElementById('submit-btn').disabled = items.length === 0;
+  }
+
+  // ── 결제 방법 선택 ─────────────────────────────────────────
+  window.selectPay = (method) => {
+    selectedPayMethod = method;
+    document.querySelectorAll('.pay-method').forEach(el => {
+      el.classList.toggle('active', el.dataset.method === method);
+    });
+    const cardFields = document.getElementById('card-fields');
+    if (method === 'card') {
+      cardFields.classList.add('visible');
+    } else {
+      cardFields.classList.remove('visible');
+    }
+  };
+
+  // ── 배송 메시지 직접 입력 ──────────────────────────────────
+  document.getElementById('ship-msg').addEventListener('change', function () {
+    const custom = document.getElementById('custom-msg');
+    custom.style.display = this.value === 'custom' ? 'block' : 'none';
+  });
+
+  // ── 전체 동의 ─────────────────────────────────────────────
+  window.toggleAll = (cb) => {
+    document.querySelectorAll('.agree-item').forEach(el => { el.checked = cb.checked; });
+  };
+
+  // ── 카드 번호 자동 포맷 ────────────────────────────────────
+  document.getElementById('card-num').addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '').slice(0, 16);
+    this.value = v.match(/.{1,4}/g)?.join(' ') || v;
+  });
+  document.getElementById('card-exp').addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '').slice(0, 4);
+    if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+    this.value = v;
+  });
+
+  // ── 유효성 검사 ───────────────────────────────────────────
+  function validate() {
+    const name  = document.getElementById('ship-name').value.trim();
+    const phone = document.getElementById('ship-phone').value.trim();
+    const zip   = document.getElementById('ship-zip').value.trim();
+    const addr  = document.getElementById('ship-addr').value.trim();
+    const agrees = document.querySelectorAll('.agree-item');
+    const required = Array.from(agrees).slice(0, 2);
+
+    const fields = [
+      { el: document.getElementById('ship-name'),  ok: name.length > 0 },
+      { el: document.getElementById('ship-phone'), ok: /^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(phone.replace(/-/g,'')) || phone.length >= 10 },
+      { el: document.getElementById('ship-zip'),   ok: /^\d{5}$/.test(zip) },
+      { el: document.getElementById('ship-addr'),  ok: addr.length > 0 },
+    ];
+
+    let ok = true;
+    fields.forEach(f => {
+      f.el.classList.toggle('error', !f.ok);
+      if (!f.ok) ok = false;
+    });
+
+    if (!required.every(c => c.checked)) {
+      showToast('필수 약관에 동의해 주세요.', 'error');
+      return false;
+    }
+
+    if (!ok) {
+      showToast('필수 항목을 모두 입력해 주세요.', 'error');
+      return false;
+    }
+
+    return { name, phone, zip, addr };
+  }
+
+  // ── 주문 제출 ─────────────────────────────────────────────
+  window.submitOrder = () => {
+    const info = validate();
+    if (!info) return;
+
+    const items = Cart.getAll();
+    const total = Cart.totalPrice();
+    const ship  = total >= FREE_THRESHOLD ? 0 : SHIPPING_FEE;
+
+    // 주문 정보 저장
+    const orderId = 'SX' + Date.now().toString().slice(-8);
+    const order = { orderId, items, total, ship, info, payMethod: selectedPayMethod, date: new Date().toLocaleString('ko-KR') };
+    localStorage.setItem('shopx_last_order', JSON.stringify(order));
+
+    // 장바구니 비우기
+    Cart.clear();
+
+    // 완료 화면 전환
+    showSuccessScreen(order);
+  };
+
+  // ── 완료 화면 표시 ─────────────────────────────────────────
+  function showSuccessScreen(order) {
+    document.getElementById('checkout-screen').style.display = 'none';
+    document.getElementById('back-to-cart').style.display = 'none';
+
+    // 단계 업데이트
+    const screen = document.getElementById('success-screen');
+    screen.style.display = 'block';
+
+    // 영수증
+    const payLabels = {
+      card: '신용/체크카드', kakao: '카카오페이', naver: '네이버페이',
+      toss: '토스페이', transfer: '계좌이체', phone: '휴대폰결제'
+    };
+
+    document.getElementById('receipt-rows').innerHTML = `
+      <div class="receipt-row"><span>주문 번호</span><span>${order.orderId}</span></div>
+      <div class="receipt-row"><span>주문 일시</span><span>${order.date}</span></div>
+      <div class="receipt-row"><span>수령인</span><span>${order.info.name}</span></div>
+      <div class="receipt-row"><span>배송지</span><span>${order.info.addr}</span></div>
+      <div class="receipt-row"><span>결제 수단</span><span>${payLabels[order.payMethod]}</span></div>
+      <div class="receipt-row"><span>상품 금액</span><span>${formatPrice(order.total)}</span></div>
+      <div class="receipt-row"><span>배송비</span><span>${order.ship === 0 ? '무료' : formatPrice(order.ship)}</span></div>
+      <div class="receipt-row total"><span>최종 결제 금액</span><span>${formatPrice(order.total + order.ship)}</span></div>
+    `;
+
+    // 콘페티 실행
+    launchConfetti();
+  }
+
+  // ── 콘페티 ────────────────────────────────────────────────
+  function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const COLORS = ['#7C3AED','#2563EB','#10B981','#F59E0B','#EC4899','#60A5FA','#A78BFA'];
+    const pieces = Array.from({ length: 140 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -200,
+      w: 8 + Math.random() * 10,
+      h: 4 + Math.random() * 6,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      rot: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - .5) * .12,
+      vy: 2 + Math.random() * 4,
+      vx: (Math.random() - .5) * 3,
+      opacity: 1
+    }));
+
+    let frame = 0;
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        p.y  += p.vy;
+        p.x  += p.vx;
+        p.rot += p.rotSpeed;
+        if (p.y > canvas.height) { p.y = -20; p.opacity = 1; }
+        if (frame > 200) p.opacity = Math.max(0, p.opacity - .008);
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      });
+      frame++;
+      if (frame < 300) requestAnimationFrame(draw);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    draw();
+  }
+
+  // ── 초기화 ──────────────────────────────────────────────
+  renderSummary();
+  window.addEventListener('cart-updated', renderSummary);
+
+  // 빈 장바구니 접근 시 처리 (주문 완료 후 재방문 등)
+  if (Cart.getAll().length === 0) {
+    const lastOrder = (() => { try { return JSON.parse(localStorage.getItem('shopx_last_order')); } catch { return null; } })();
+    if (lastOrder) {
+      // 이전 주문 완료 화면 표시
+      showSuccessScreen(lastOrder);
+    }
+  }
+</script>
+</body>
+</html>

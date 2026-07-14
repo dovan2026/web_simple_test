@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>장바구니 — ShopX</title>
+  <meta name="description" content="ShopX 장바구니. 담은 상품을 확인하고 주문하세요." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #080C14;
+      --surface: #111827;
+      --card:    #1A2235;
+      --border:  rgba(255,255,255,.07);
+      --text:    #F1F5F9;
+      --muted:   #94A3B8;
+      --accent:  #7C3AED;
+      --accent2: #2563EB;
+      --gold:    #F59E0B;
+      --success: #10B981;
+      --danger:  #EF4444;
+      --radius:  16px;
+      --radius-sm: 8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 99px; }
+
+    /* ── 헤더 ──────────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(20px);
+      background: rgba(8,12,20,.82);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .header-inner {
+      max-width: 1280px; margin: 0 auto;
+      display: flex; align-items: center; gap: 20px; height: 68px;
+    }
+    .logo {
+      font-size: 1.6rem; font-weight: 900;
+      background: linear-gradient(135deg, #7C3AED, #2563EB);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none; font-size: .88rem;
+      padding: 6px 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); transition: all .2s;
+    }
+    .back-btn:hover { color: var(--text); border-color: rgba(124,58,237,.4); }
+    .header-right {
+      margin-left: auto; display: flex; align-items: center; gap: 12px;
+    }
+    .cart-btn {
+      position: relative; background: none; border: none;
+      cursor: pointer; color: var(--text); font-size: 1.4rem;
+      display: flex; align-items: center; padding: 8px; border-radius: 50%;
+      transition: background .2s; text-decoration: none;
+    }
+    .cart-btn:hover { background: rgba(255,255,255,.08); }
+    #cart-badge {
+      position: absolute; top: 2px; right: 2px;
+      background: var(--accent); color: #fff; font-size: .6rem; font-weight: 700;
+      width: 18px; height: 18px; border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+      border: 2px solid var(--bg);
+    }
+
+    /* ── 페이지 헤더 ─────────────────────── */
+    .page-head {
+      max-width: 1280px; margin: 0 auto;
+      padding: 36px 24px 0;
+    }
+    .page-head h1 {
+      font-size: 1.8rem; font-weight: 900; letter-spacing: -.3px;
+      margin-bottom: 4px;
+    }
+    .page-head p { color: var(--muted); font-size: .9rem; }
+
+    /* ── 진행 단계 표시 ──────────────────── */
+    .steps {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0; margin: 28px 24px;
+    }
+    .step {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; font-size: .82rem; font-weight: 600;
+    }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; flex-shrink: 0;
+    }
+    .step.active .step-num {
+      background: linear-gradient(135deg, #7C3AED, #2563EB); color: #fff;
+    }
+    .step.done .step-num {
+      background: var(--success); color: #fff;
+    }
+    .step:not(.active):not(.done) .step-num {
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    }
+    .step.active { color: var(--text); }
+    .step:not(.active) { color: var(--muted); }
+    .step-line { flex: 1; height: 1px; background: var(--border); max-width: 60px; }
+
+    /* ── 메인 레이아웃 ───────────────────── */
+    .cart-layout {
+      max-width: 1280px; margin: 0 auto;
+      padding: 0 24px 80px;
+      display: grid; grid-template-columns: 1fr 380px; gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .cart-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── 장바구니 목록 ───────────────────── */
+    .cart-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .cart-header h2 { font-size: 1rem; font-weight: 700; }
+    .clear-all-btn {
+      background: none; border: none; color: var(--muted); font-family: inherit;
+      font-size: .82rem; cursor: pointer; transition: color .2s;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .clear-all-btn:hover { color: var(--danger); }
+
+    .cart-list { display: flex; flex-direction: column; gap: 14px; }
+
+    .cart-item {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      display: grid; grid-template-columns: 90px 1fr auto;
+      gap: 16px; align-items: center;
+      transition: border-color .2s, transform .3s;
+      animation: slideIn .3s ease;
+    }
+    .cart-item:hover { border-color: rgba(124,58,237,.2); }
+    .cart-item.removing {
+      animation: slideOut .3s ease forwards;
+    }
+
+    .item-img {
+      width: 90px; height: 90px; border-radius: 10px;
+      overflow: hidden; background: var(--surface); flex-shrink: 0;
+    }
+    .item-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    .item-info { min-width: 0; }
+    .item-cat {
+      font-size: .7rem; font-weight: 600; letter-spacing: .5px;
+      color: #A78BFA; text-transform: uppercase; margin-bottom: 4px;
+    }
+    .item-name {
+      font-size: .9rem; font-weight: 600; line-height: 1.4;
+      margin-bottom: 6px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .item-opts {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .opt-tag {
+      font-size: .72rem; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 50px;
+      padding: 2px 8px; color: var(--muted);
+    }
+
+    .item-right {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+      min-width: 130px;
+    }
+    .item-price {
+      font-size: 1rem; font-weight: 800;
+    }
+
+    .qty-ctrl {
+      display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); overflow: hidden;
+    }
+    .qty-btn {
+      width: 32px; height: 32px; background: none; border: none;
+      color: var(--text); font-size: 1rem; cursor: pointer;
+      transition: background .2s;
+    }
+    .qty-btn:hover { background: rgba(124,58,237,.15); }
+    .qty-val {
+      min-width: 36px; text-align: center; font-size: .88rem; font-weight: 600;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 4px 0;
+    }
+
+    .del-btn {
+      background: none; border: none; color: var(--muted);
+      font-size: .78rem; cursor: pointer; padding: 4px 8px;
+      border-radius: var(--radius-sm); transition: all .2s;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .del-btn:hover { color: var(--danger); background: rgba(239,68,68,.08); }
+
+    /* ── 빈 장바구니 ────────────────────── */
+    .empty-cart {
+      text-align: center; padding: 80px 24px;
+      color: var(--muted); grid-column: 1/-1;
+    }
+    .empty-cart .icon { font-size: 4rem; margin-bottom: 16px; }
+    .empty-cart h2 { font-size: 1.3rem; color: var(--text); margin-bottom: 10px; }
+    .empty-cart p { margin-bottom: 28px; }
+    .go-shop-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 50px;
+      background: linear-gradient(135deg, #7C3AED, #2563EB);
+      color: #fff; text-decoration: none; font-weight: 700; font-size: .95rem;
+      box-shadow: 0 6px 24px rgba(124,58,237,.4);
+      transition: transform .2s;
+    }
+    .go-shop-btn:hover { transform: translateY(-2px); }
+
+    /* ── 주문 요약 ──────────────────────── */
+    .order-summary {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      position: sticky; top: 88px;
+    }
+    .summary-title {
+      font-size: 1rem; font-weight: 700; margin-bottom: 20px;
+      padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    }
+    .summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: .88rem; padding: 8px 0; color: var(--muted);
+    }
+    .summary-row.total {
+      padding-top: 16px; margin-top: 8px;
+      border-top: 1px solid var(--border);
+      font-size: 1.05rem; font-weight: 800; color: var(--text);
+    }
+    .free-tag {
+      color: var(--success); font-weight: 600; font-size: .82rem;
+    }
+    .shipping-fee { color: var(--text); font-weight: 600; }
+
+    .coupon-wrap {
+      display: flex; gap: 8px; margin: 16px 0;
+    }
+    .coupon-input {
+      flex: 1; padding: 9px 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text);
+      font-family: inherit; font-size: .83rem; outline: none;
+      transition: border-color .2s;
+    }
+    .coupon-input:focus { border-color: var(--accent); }
+    .coupon-input::placeholder { color: var(--muted); }
+    .coupon-apply-btn {
+      padding: 9px 14px; border-radius: var(--radius-sm);
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); font-family: inherit; font-size: .83rem;
+      cursor: pointer; transition: all .2s; white-space: nowrap;
+    }
+    .coupon-apply-btn:hover { border-color: var(--accent); color: #A78BFA; }
+
+    .order-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #7C3AED, #2563EB);
+      border: none; border-radius: var(--radius-sm);
+      color: #fff; font-family: inherit; font-size: 1rem; font-weight: 700;
+      cursor: pointer; margin-top: 16px;
+      box-shadow: 0 6px 24px rgba(124,58,237,.4);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .order-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(124,58,237,.6);
+    }
+    .order-btn:disabled {
+      opacity: .4; cursor: not-allowed; transform: none; box-shadow: none;
+    }
+
+    .safe-badges {
+      display: flex; justify-content: center; gap: 16px;
+      margin-top: 16px; flex-wrap: wrap;
+    }
+    .safe-badge {
+      font-size: .72rem; color: var(--muted);
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ── 토스트 ────────────────────────── */
+    .shopx-toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); padding: 12px 24px;
+      border-radius: 50px; font-size: .88rem; font-weight: 500;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+      z-index: 9999; white-space: nowrap;
+    }
+    .shopx-toast.show { transform: translateX(-50%) translateY(0); }
+    .shopx-toast.success { border-color: rgba(16,185,129,.4); }
+    .toast-icon { color: var(--success); }
+
+    /* ── 키프레임 ─────────────────────── */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-16px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideOut {
+      from { opacity: 1; transform: translateX(0) scaleY(1); max-height: 200px; }
+      to   { opacity: 0; transform: translateX(16px) scaleY(0); max-height: 0; padding: 0; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="x1.html" class="logo">ShopX</a>
+    <a href="x1.html" class="back-btn">← 쇼핑 계속</a>
+    <div class="header-right">
+      <a href="x3.html" class="cart-btn" aria-label="장바구니">
+        🛒 <span id="cart-badge">0</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="page-head" id="page-head">
+  <h1>장바구니</h1>
+  <p id="cart-count-text">로딩 중…</p>
+</div>
+
+<!-- 진행 단계 -->
+<div class="steps">
+  <div class="step active">
+    <div class="step-num">1</div> 장바구니
+  </div>
+  <div class="step-line"></div>
+  <div class="step">
+    <div class="step-num">2</div> 주문 / 결제
+  </div>
+  <div class="step-line"></div>
+  <div class="step">
+    <div class="step-num">3</div> 완료
+  </div>
+</div>
+
+<div class="cart-layout" id="cart-layout">
+  <!-- 동적 렌더링 -->
+</div>
+
+<script src="products.js"></script>
+<script>
+  const SHIPPING_FEE = 3000;
+  const FREE_THRESHOLD = 50000;
+
+  function render() {
+    const items = Cart.getAll();
+    const layout = document.getElementById('cart-layout');
+    updateCartBadge();
+
+    document.getElementById('cart-count-text').textContent =
+      items.length ? `총 ${Cart.totalCount()}개 상품이 담겨있습니다` : '아직 담은 상품이 없어요';
+
+    if (!items.length) {
+      layout.innerHTML = `
+        <div class="empty-cart">
+          <div class="icon">🛒</div>
+          <h2>장바구니가 비어있습니다</h2>
+          <p>관심 있는 상품을 장바구니에 담아보세요!</p>
+          <a href="x1.html" class="go-shop-btn">🛍️ 쇼핑하러 가기</a>
+        </div>`;
+      return;
+    }
+
+    const total = Cart.totalPrice();
+    const shipping = total >= FREE_THRESHOLD ? 0 : SHIPPING_FEE;
+    const finalPrice = total + shipping;
+
+    layout.innerHTML = `
+      <!-- 장바구니 목록 -->
+      <div>
+        <div class="cart-header">
+          <h2>상품 목록 (${items.length}종류)</h2>
+          <button class="clear-all-btn" id="clear-all-btn" onclick="clearAll()">🗑️ 전체 삭제</button>
+        </div>
+        <div class="cart-list" id="cart-list">
+          ${items.map(item => `
+            <div class="cart-item" id="item-${CSS.escape(item.key)}">
+              <div class="item-img">
+                <img src="${item.image}" alt="${item.name}" loading="lazy" />
+              </div>
+              <div class="item-info">
+                <div class="item-cat">${item.category}</div>
+                <div class="item-name" title="${item.name}">${item.name}</div>
+                <div class="item-opts">
+                  ${item.color ? `<span class="opt-tag">색상: ${item.color}</span>` : ''}
+                  ${item.size ? `<span class="opt-tag">사이즈: ${item.size}</span>` : ''}
+                </div>
+              </div>
+              <div class="item-right">
+                <span class="item-price">${formatPrice(item.price * item.qty)}</span>
+                <div class="qty-ctrl">
+                  <button class="qty-btn" onclick="changeQty('${escKey(item.key)}', ${item.qty - 1})" aria-label="수량 감소">−</button>
+                  <span class="qty-val">${item.qty}</span>
+                  <button class="qty-btn" onclick="changeQty('${escKey(item.key)}', ${item.qty + 1})" aria-label="수량 증가">+</button>
+                </div>
+                <button class="del-btn" onclick="removeItem('${escKey(item.key)}')">✕ 삭제</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- 주문 요약 -->
+      <div class="order-summary">
+        <div class="summary-title">📋 주문 요약</div>
+
+        <div class="summary-row">
+          <span>상품 금액 (${Cart.totalCount()}개)</span>
+          <span>${formatPrice(total)}</span>
+        </div>
+        <div class="summary-row">
+          <span>배송비</span>
+          <span class="${shipping === 0 ? 'free-tag' : 'shipping-fee'}">
+            ${shipping === 0 ? '무료' : formatPrice(shipping)}
+          </span>
+        </div>
+        ${shipping > 0 ? `
+          <div style="font-size:.75rem;color:var(--muted);text-align:right;margin-top:-4px;margin-bottom:4px;">
+            ${formatPrice(FREE_THRESHOLD - total)} 더 구매 시 무료배송
+          </div>
+        ` : ''}
+
+        <div class="coupon-wrap">
+          <input type="text" class="coupon-input" id="coupon-input" placeholder="쿠폰 코드 입력" />
+          <button class="coupon-apply-btn" onclick="applyCoupon()">적용</button>
+        </div>
+
+        <div class="summary-row total">
+          <span>총 결제 금액</span>
+          <span style="color:#A78BFA">${formatPrice(finalPrice)}</span>
+        </div>
+
+        <button class="order-btn" id="order-btn" onclick="goCheckout()">
+          주문하기 (${formatPrice(finalPrice)})
+        </button>
+
+        <div class="safe-badges">
+          <div class="safe-badge">🔒 SSL 보안 결제</div>
+          <div class="safe-badge">↩️ 7일 무료 반품</div>
+          <div class="safe-badge">✅ 정품 보장</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function escKey(key) {
+    return key.replace(/'/g, "\\'");
+  }
+
+  window.changeQty = (key, newQty) => {
+    if (newQty <= 0) {
+      removeItem(key);
+      return;
+    }
+    Cart.updateQty(key, newQty);
+    render();
+  };
+
+  window.removeItem = (key) => {
+    const el = document.getElementById(`item-${CSS.escape(key)}`);
+    if (el) {
+      el.classList.add('removing');
+      setTimeout(() => { Cart.remove(key); render(); }, 280);
+    } else {
+      Cart.remove(key); render();
+    }
+    showToast('상품이 삭제되었습니다.', 'info');
+  };
+
+  window.clearAll = () => {
+    if (!confirm('장바구니를 전부 비우시겠습니까?')) return;
+    Cart.clear(); render();
+  };
+
+  window.applyCoupon = () => {
+    const code = document.getElementById('coupon-input')?.value.trim();
+    if (!code) { showToast('쿠폰 코드를 입력해 주세요.', 'error'); return; }
+    showToast('유효하지 않은 쿠폰 코드입니다.', 'error');
+  };
+
+  window.goCheckout = () => {
+    location.href = 'x4.html';
+  };
+
+  window.addEventListener('cart-updated', render);
+  render();
+</script>
+</body>
+</html>
